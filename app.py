@@ -32,6 +32,7 @@ def connect():
     
     if user_username != creds["User"] or user_passwd != creds["password"]:
         print("Invalid username or password")
+        raise(Exception("Invalid username or password"))
         return
     try:
         connection = mysql.connect(host = creds["host"],
@@ -183,6 +184,3 @@ def display_vaccant_rooms(connection_tuple):
     
 
         
-c = connect()
-
-display_vaccant_rooms(c)
