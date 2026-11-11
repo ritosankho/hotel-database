@@ -6,6 +6,8 @@ Gets credentials from .env file, returns dictionary.
 '''
 
 def get_credentials():  
+    # Load the app credentials from the environment so the database login
+    # can be reused without hardcoding secrets in the source code.
     try:
         load_dotenv()
         operator = os.environ["OPERATOR"]
@@ -26,6 +28,7 @@ function so that it does not close once it goes out of scope
 '''
        
 def connect():   
+    # Verify the entered credentials before opening a database session.
     creds = get_credentials()
     user_username = input("Enter username: ")
     user_passwd = input("Enter password: ")
@@ -51,6 +54,8 @@ Takes connection tuple, and shows price based on room number.
 '''
 
 def show_price(connection_tuple):
+    # Show the nightly rate for a room, with a loop that keeps asking until the
+    # operator enters 0 to exit.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
@@ -71,6 +76,7 @@ def show_price(connection_tuple):
 
 
 def update_price(connection_tuple):
+    # Update a room's rate after validating the room number and the new price.
     if not connection_tuple:
             print("Invalid connection tuple")
             return
@@ -97,6 +103,7 @@ def update_price(connection_tuple):
 
 
 def display_floors(connection_tuple):
+    # Group rooms by floor numbers and print each floor's rooms in a neat table.
     cursor = connection_tuple[1]
     try:
         cursor.execute("select * from rooms")
@@ -105,6 +112,7 @@ def display_floors(connection_tuple):
         print("Could not fetch from database")
         return
     while True:
+        # Accept a comma-separated floor list and print only the matching rooms.
         floors = eval(input("Enter the floors, separated by comma. Enter 0 to exit"))
         if floors == 0:
             break
@@ -119,6 +127,8 @@ def display_floors(connection_tuple):
                     printlst = []
 
 def check_in(connection_tuple):
+    # Create a booking only after confirming the room exists, is available,
+    # and the stay duration is valid.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
@@ -144,6 +154,7 @@ def check_in(connection_tuple):
         print(f"Checked in to room number {room_no}. Booking ID: {booking_id}")
 
 def check_out(connection_tuple):
+    # Look up the booking by ID, confirm it exists, then delete it and commit.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
@@ -164,6 +175,7 @@ def check_out(connection_tuple):
 
 
 def display_vaccant_rooms(connection_tuple):
+    # Filter the room list to only those currently available and print them.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
