@@ -38,4 +38,12 @@ def generate_booking_id(length=10):
     id = ''.join(random.choice(characters) for _ in range(length)).lower()
     return id
 
+def check_room_availability(cursor, room_no):
+    try_cursor_execute(cursor, f"SELECT * FROM bookings where room_no={room_no}")
+    n = cursor.fetchone()
+    if n:
+        print(f"Room number {room_no} is already booked")
+        return False
+    
+    return True
 
