@@ -1,8 +1,5 @@
-import mysql.connector
-from tabulate import tabulate
-import os
-from dotenv import load_dotenv
-from datetime import date
+from utils import *
+
 
 '''
 Gets credentials from .env file, returns dictionary.
@@ -37,7 +34,7 @@ def connect():
         print("Invalid username or password")
         return
     try:
-        connection = mysql.connector.connect(host = creds["host"],
+        connection = mysql.connect(host = creds["host"],
                             user =creds["User"] ,
                             password=creds["password"],
                             database = creds["db"])
@@ -58,29 +55,17 @@ def show_price(connection_tuple):
         return
     cursor = connection_tuple[1]
     
-    try:
-        cursor.execute("select * from rooms")
-        rows = cursor.fetchall()
-    except:
-        print("Could not fetch data from the database")
+    try_cursor_execute(cursor, "select * from rooms")
+    rows = cursor.fetchall()
     
     while True:
-        try:
-            room_no = int(input("Enter the room number. Enter 0 to quit "))
-            if room_no == 0:
-                break
-        except ValueError:
-            print("Enter valid numbers only")
+        room_no = int_input("Enter the room number to check price, press 0 to exit: ")
+        if room_no <= 0:
+            break
+        n = check_room_exists(cursor, room_no)
+        if not n:
             continue
-    
-        for i in rows:
-            if i[0] == room_no:
-                print(f"The price of the room is ${i[1]} per night")
-                break
-        else:
-            print(f"Room number {room_no} does not exist")
-            
-        
+        print(f"Price of room number {room_no} is ${n[1]} per night")        
             
 
 
@@ -89,32 +74,24 @@ def update_price(connection_tuple):
             print("Invalid connection tuple")
             return
     
-    cursor = connection_tuple[1]    
+    cursor = connection_tuple[1]
+    
     while True:
-            try:
-                room_no = int(input("Enter the room number, press 0 to exit: "))
-                if room_no ==0:
-                    break
-                new_price = int(input("Enter new price: "))
-                
-            except ValueError:
-                print("Enter valid numbers only")
-                continue
-    try:
-        cursor.execute("select room_no from rooms")
-        for i in cursor.fetchall():
-            if i[0]==room_no:
-                break
-        else:
-            print(f"Room number {room_no} does not exist")
-            return
-    except:
-        print("Could not read the database.")
-        return
-    try:
-        cursor.execute("update rooms set price = %s where room_no = %s",(new_price, room_no))
-    except:
-        print("Could not update the database")
+        room_no = int_input("Enter the room number to update price, press 0 to exit: ")
+        if room_no <= 0:
+            break
+        
+        if not check_room_exists(cursor, room_no):
+            continue
+        break
+    new_price = int_input("Enter new price: ")
+    try_cursor_execute(cursor, "select * from rooms")
+    rows = cursor.fetchall()
+    
+    try_cursor_execute(cursor, "update rooms set price=%s where room_no=%s", (new_price, room_no))
+    connection_tuple[0].commit()
+    print(f"Price of room number {room_no} updated to ${new_price} per night")
+    
         
 
 
@@ -144,4 +121,4 @@ def display_floors(c):
         
 c = connect()
 
-display_floors(c)
+show_price(c)
