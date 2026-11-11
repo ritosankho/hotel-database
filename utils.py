@@ -3,6 +3,8 @@ from tabulate import tabulate
 import os
 from dotenv import load_dotenv
 from datetime import date
+import string
+import random
 
 def int_input(prompt):
     while True:
@@ -30,5 +32,10 @@ def check_room_exists(cursor, room_no):
         print(f"Room number {room_no} does not exist")
         return None
     return n
-        
+
+def generate_booking_id(length=10):
+    characters = string.ascii_letters + string.digits
+    id = ''.join(random.choice(characters) for _ in range(length)).lower()
+    return id
+
 

@@ -95,8 +95,8 @@ def update_price(connection_tuple):
         
 
 
-def display_floors(c):
-    cursor = c[1]
+def display_floors(connection_tuple):
+    cursor = connection_tuple[1]
     try:
         cursor.execute("select * from rooms")
         
@@ -116,9 +116,32 @@ def display_floors(c):
                     print(f"Floor {i}")
                     print(tabulate(printlst, headers = ("Room", "Price")))
                     printlst = []
+
+def check_in(connection_tuple):
+    if not connection_tuple:
+        print("Invalid connection tuple")
+        return
+    cursor = connection_tuple[1]
+    
+    while True:
+        room_no = int_input("Enter the room number to check in, press 0 to exit: ")
+        if room_no <= 0:
+            break
+        n = check_room_exists(cursor, room_no)
+        if not n:
+            continue
+        name = input("Enter your name: ")
+        duration = int_input("Enter duration of stay in days: ")
+        if duration <= 0:
+            print("Invalid duration")
+            continue
+        booking_id = generate_booking_id()
+        try_cursor_execute(cursor, "insert into bookings values (%s, %s, %s, %s, %s)", (booking_id, room_no, name, date.today(), duration,))
+        connection_tuple[0].commit()
+        print(f"Checked in to room number {room_no}. Booking ID: {booking_id}")
                 
     
         
 c = connect()
 
-show_price(c)
+check_in(c)
