@@ -1,5 +1,44 @@
-# hotel-database
-Class 12 Computer Science Project for AISSCE - a python program to interface with a mysql database to add, edit, retrieve, and delete records of bookings, rooms and earnings in a hotel. 
-Features:
-    1. I will list the features later
-    2. Later almost always means never
+# Hotel Database
+
+A command-line hotel management system using Python, PyMySQL, and MySQL.
+
+## Features
+
+- Admin login and employee management
+- Receptionist login and booking lookup
+- Customer registration, login, room booking, and cancellation
+- Room prices, floor listings, and availability
+
+## Requirements
+
+- Python 3
+- MySQL
+- `pymysql`
+- `tabulate`
+- `python-dotenv`
+
+Install dependencies:
+
+```bash
+pip install pymysql tabulate python-dotenv
+```
+
+## Configuration
+
+Create a `.env` file in the project directory:
+
+```env
+OPERATOR=your_database_user
+DB_PASSWORD=your_database_password
+ADMIN_PASSWORD=your_admin_password
+HOST=localhost
+DBNAME=hotel
+```
+
+Create MySQL tables for `rooms`, `bookings`, `customer`, and `employees` before running the application.
+
+## Run
+
+```bash
+python main.py
+```

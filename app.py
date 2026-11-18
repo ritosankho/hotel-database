@@ -1,61 +1,9 @@
 from utils import *
 
 
-'''
-Gets credentials from .env file, returns dictionary.
-'''
-
-def get_credentials():  
-    # Load the app credentials from the environment so the database login
-    # can be reused without hardcoding secrets in the source code.
-    try:
-        load_dotenv()
-        operator = os.environ["OPERATOR"]
-        password = os.environ["PASSWORD"]
-        host = os.environ["HOST"]
-        db = os.environ["DBNAME"]
-        return {"User":operator,"db":db, "host": host, "password":password}
-        
-    except:
-        print("Cannot access database credentials. Check environment variables")
- 
-
-'''
-Authenticates user and connects to database. If the credentials given by the user
-matches the .env file, it lets the user in. Returns connection tuple,
-in the form (connection, cursor). The connection has to be returned from the 
-function so that it does not close once it goes out of scope
-'''
-       
-def connect():   
-    # Verify the entered credentials before opening a database session.
-    creds = get_credentials()
-    user_username = input("Enter username: ")
-    user_passwd = input("Enter password: ")
-    
-    if user_username != creds["User"] or user_passwd != creds["password"]:
-        print("Invalid username or password")
-        raise(Exception("Invalid username or password"))
-        return
-    try:
-        connection = mysql.connect(host = creds["host"],
-                            user =creds["User"] ,
-                            password=creds["password"],
-                            database = creds["db"])
-        print("Connected to database")
-        cursor = connection.cursor()
-        return (connection,cursor)
-    except Exception as e:
-        ("Failed to connect to database")
-        print(e)
-        
-'''
-Takes connection tuple, and shows price based on room number.
-'''
-
+# Handles room, booking, and employee operations.
 def show_price(connection_tuple):
-    # Show the nightly rate for a room, with a loop that keeps asking until the
-    # operator enters 0 to exit.
+    # Displays a room's nightly rate.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
@@ -75,8 +23,9 @@ def show_price(connection_tuple):
             
 
 
+# Updates a room's nightly rate.
 def update_price(connection_tuple):
-    # Update a room's rate after validating the room number and the new price.
+    # Validates the room and saves the new price.
     if not connection_tuple:
             print("Invalid connection tuple")
             return
@@ -102,8 +51,9 @@ def update_price(connection_tuple):
         
 
 
+# Lists rooms grouped by floor.
 def display_floors(connection_tuple):
-    # Group rooms by floor numbers and print each floor's rooms in a neat table.
+    # Prints matching rooms for requested floors.
     cursor = connection_tuple[1]
     try:
         cursor.execute("select * from rooms")
@@ -112,7 +62,7 @@ def display_floors(connection_tuple):
         print("Could not fetch from database")
         return
     while True:
-        # Accept a comma-separated floor list and print only the matching rooms.
+        # Accepts a comma-separated floor list.
         floors = eval(input("Enter the floors, separated by comma. Enter 0 to exit"))
         if floors == 0:
             break
@@ -126,16 +76,16 @@ def display_floors(connection_tuple):
                     print(tabulate(printlst, headers = ("Room", "Price")))
                     printlst = []
 
-def check_in(connection_tuple):
-    # Create a booking only after confirming the room exists, is available,
-    # and the stay duration is valid.
+# Creates a room booking.
+def book(connection_tuple):
+    # Checks availability, then inserts a booking.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
     cursor = connection_tuple[1]
     
     while True:
-        room_no = int_input("Enter the room number to check in, press 0 to exit: ")
+        room_no = int_input("Enter the room number to book, press 0 to exit to main menu: ")
         if room_no <= 0:
             break
         n = check_room_exists(cursor, room_no)
@@ -143,7 +93,7 @@ def check_in(connection_tuple):
             continue
         if not check_room_availability(cursor, room_no):
             continue
-        name = input("Enter your name: ")
+        name = input("Enter The boarder's name: ")
         duration = int_input("Enter duration of stay in days: ")
         if duration <= 0:
             print("Invalid duration")
@@ -153,15 +103,16 @@ def check_in(connection_tuple):
         connection_tuple[0].commit()
         print(f"Checked in to room number {room_no}. Booking ID: {booking_id}")
 
-def check_out(connection_tuple):
-    # Look up the booking by ID, confirm it exists, then delete it and commit.
+# Cancels a booking by booking ID.
+def cancel_booking(connection_tuple):
+    # Deletes a confirmed booking.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
     cursor = connection_tuple[1]
     
     while True:
-        booking_id = input("Enter the booking ID to check out, press 0 to exit: ")
+        booking_id = input("Enter the booking ID to cancel, press 0 to exit: ")
         if booking_id == "0":
             break
         try_cursor_execute(cursor, "select * from bookings where booking_id=%s", (booking_id,))
@@ -171,11 +122,12 @@ def check_out(connection_tuple):
             continue
         try_cursor_execute(cursor, "delete from bookings where booking_id=%s", (booking_id,))
         connection_tuple[0].commit()
-        print(f"Checked out of room number {n[1]}. Booking ID: {booking_id}")
+        print(f"Cancelled the booking of room number {n[1]}. Booking ID: {booking_id}")
 
 
+# Displays rooms that are not currently booked.
 def display_vaccant_rooms(connection_tuple):
-    # Filter the room list to only those currently available and print them.
+    # Filters and prints available rooms.
     if not connection_tuple:
         print("Invalid connection tuple")
         return
@@ -192,7 +144,47 @@ def display_vaccant_rooms(connection_tuple):
     
     print("Vaccant rooms:")
     print(tabulate(vaccant_rooms, headers = ("Room", "Price")))
-                
-    
 
+# Looks up and prints booking details.
+def show_booking_details(connection_tuple):
+    if not connection_tuple:
+        print("Invalid connection tuple")
+        return
+    cursor = connection_tuple[1]
+    while True:
+        booking_id = input("Enter the booking ID to view details, press 0 to exit: ")
+        if booking_id == "0":
+            break
+        try_cursor_execute(cursor, "select * from bookings where booking_id=%s", (booking_id,))
+        n = cursor.fetchone()
+        if not n:
+            print(f"Booking ID {booking_id} does not exist")
+            continue
+        print(f"Booking ID: {n[0]}")
+        print(f"Room Number: {n[1]}")
+        print(f"Guest Name: {n[2]}")
+        print(f"Check-in Date: {n[3]}")
+        print(f"Duration of Stay: {n[4]} days")
+
+
+# Displays every booking in a table.
+def show_all_bookings(connection_tuple):
+    if not connection_tuple:
+        print("Invalid connection tuple")
+        return
+
+    cursor = connection_tuple[1]
+    if not try_cursor_execute(cursor, "select * from bookings"):
+        return
+
+    bookings = cursor.fetchall()
+    if not bookings:
+        print("No bookings found.")
+        return
+
+    print(tabulate(
+        bookings,
+        headers=("Booking ID", "Room Number", "Guest Name", "Check-in Date", "Duration")
+    ))
+    
         
